@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,6 +62,10 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
+				},
+				document: {
+					field: '#E6F7FF',
+					highlight: '#1890FF',
 				}
 			},
 			borderRadius: {
@@ -84,11 +89,16 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'field-highlight': {
+					'0%, 100%': { backgroundColor: 'transparent' },
+					'50%': { backgroundColor: 'rgba(24, 144, 255, 0.2)' }
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'field-highlight': 'field-highlight 2s ease-in-out'
 			}
 		}
 	},
