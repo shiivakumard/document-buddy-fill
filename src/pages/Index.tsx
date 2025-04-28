@@ -6,7 +6,9 @@ import TemplateSelector from "@/components/TemplateSelector";
 import DocumentViewer from "@/components/DocumentViewer";
 import FormFieldsSidebar from "@/components/FormFieldsSidebar";
 import { Button } from "@/components/ui/button";
-import { FileText, Plus } from "lucide-react";
+import { FileText } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
+import { fillPdfWithValues } from "@/utils/pdfUtils";
 
 enum AppView {
   TemplateSelection,
@@ -15,12 +17,15 @@ enum AppView {
 }
 
 const Index = () => {
+  const { toast } = useToast();
   const [view, setView] = useState<AppView>(AppView.TemplateSelection);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [currentDocument, setCurrentDocument] = useState<DocumentInfo | null>(null);
   const [formFields, setFormFields] = useState<FormField[]>([]);
   const [selectedFieldId, setSelectedFieldId] = useState<string | null>(null);
+  const [isAddingField, setIsAddingField] = useState(false);
+  const [newFieldName, setNewFieldName] = useState("");
 
   const handleCreateTemplate = (template: Template) => {
     setTemplates([...templates, template]);
@@ -29,15 +34,31 @@ const Index = () => {
 
   const handleSelectTemplate = (template: Template) => {
     setSelectedTemplate(template);
+    setFormFields(template.fields);
     setView(AppView.DocumentFilling);
   };
 
   const handleDocumentLoaded = (document: DocumentInfo) => {
     setCurrentDocument(document);
+    
+    // If we have a selected template, use its fields
+    if (selectedTemplate) {
+      document.templateId = selectedTemplate.id;
+    }
   };
 
   const handleFieldsExtracted = (fields: FormField[]) => {
-    setFormFields(fields);
+    // If we have a template, merge its fields with extracted fields
+    if (selectedTemplate) {
+      const allFields = [...selectedTemplate.fields, ...fields];
+      // Remove duplicates based on field names
+      const uniqueFields = allFields.filter((field, index, self) => 
+        index === self.findIndex(f => f.name === field.name)
+      );
+      setFormFields(uniqueFields);
+    } else {
+      setFormFields(fields);
+    }
   };
 
   const handleSelectField = (fieldId: string) => {
@@ -50,6 +71,44 @@ const Index = () => {
         field.id === fieldId ? { ...field, value } : field
       )
     );
+  };
+  
+  const handleAddField = (fieldName: string) => {
+    setIsAddingField(true);
+    setNewFieldName(fieldName);
+  };
+  
+  const handleFieldAdded = (newField: FormField) => {
+    setFormFields([...formFields, newField]);
+    setIsAddingField(false);
+    setNewFieldName("");
+  };
+  
+  const handleSaveDocument = async () => {
+    if (!currentDocument) return;
+    
+    toast({
+      title: "Processing document",
+      description: "Please wait while we process your document"
+    });
+    
+    try {
+      // In a real app, this would actually fill the PDF with values
+      const filledPdfUrl = await fillPdfWithValues(currentDocument.url, formFields);
+      
+      toast({
+        title: "Document ready",
+        description: "Your document has been filled successfully"
+      });
+      
+      // In a real app, you might offer a download link or preview the filled document
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to process the document"
+      });
+    }
   };
 
   const renderView = () => {
@@ -70,6 +129,9 @@ const Index = () => {
                 selectedField={formFields.find(field => field.id === selectedFieldId)}
                 onDocumentLoaded={handleDocumentLoaded}
                 onFieldsExtracted={handleFieldsExtracted}
+                onAddField={handleFieldAdded}
+                isAddingField={isAddingField}
+                newFieldName={newFieldName}
               />
             </div>
             <div className="bg-white border rounded-lg overflow-hidden">
@@ -78,6 +140,8 @@ const Index = () => {
                 selectedFieldId={selectedFieldId}
                 onSelectField={handleSelectField}
                 onUpdateFieldValue={handleUpdateFieldValue}
+                onAddField={handleAddField}
+                onSaveDocument={handleSaveDocument}
               />
             </div>
           </div>
