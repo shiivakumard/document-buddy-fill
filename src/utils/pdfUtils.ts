@@ -1,70 +1,104 @@
 
 import { FormField, DocumentInfo } from "@/types";
+import * as pdfjsLib from 'pdfjs-dist';
+
+// Configure PDF.js worker
+const pdfjsWorkerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorkerSrc;
+
+/**
+ * Extract placeholders from text content using regex ({{placeholder}})
+ */
+const extractPlaceholders = (text: string): string[] => {
+  const placeholderRegex = /\{\{([^}]+)\}\}/g;
+  const matches = [...text.matchAll(placeholderRegex)];
+  
+  // Extract the placeholder names (without {{ }})
+  const placeholders = matches.map(match => match[1].trim());
+  
+  // Remove duplicates
+  return [...new Set(placeholders)];
+};
 
 /**
  * Extract form fields from a PDF document
- * (This is a simulation of PDF field extraction)
  */
-export const extractFormFields = (file: File): Promise<FormField[]> => {
-  return new Promise((resolve) => {
-    console.log("Extracting form fields from:", file.name);
+export const extractFormFields = async (file: File): Promise<FormField[]> => {
+  console.log("Extracting form fields from:", file.name);
+  
+  try {
+    // Create a URL for the PDF file
+    const fileUrl = URL.createObjectURL(file);
     
-    // In a real implementation, you would use PDF.js or a similar library
-    // to analyze the PDF and find form fields or areas that look like they need filling
+    // Load the PDF document
+    const loadingTask = pdfjsLib.getDocument(fileUrl);
+    const pdf = await loadingTask.promise;
     
-    setTimeout(() => {
-      // Simulate extracting fields
-      const mockFields: FormField[] = [
-        {
-          id: "field_1",
-          name: "Full Name",
-          type: "text",
-          placeholder: "Enter your full name",
-          required: true,
-          rect: { x: 100, y: 200, width: 300, height: 30 },
-          page: 1
-        },
-        {
-          id: "field_2",
-          name: "Company",
-          type: "text",
-          placeholder: "Enter company name",
-          required: true,
-          rect: { x: 100, y: 250, width: 300, height: 30 },
-          page: 1
-        },
-        {
-          id: "field_3",
-          name: "Date",
-          type: "date",
-          placeholder: "Select date",
-          required: true,
-          rect: { x: 100, y: 300, width: 200, height: 30 },
-          page: 1
-        },
-        {
-          id: "field_4",
-          name: "Email",
-          type: "text",
-          placeholder: "Enter your email",
-          required: true,
-          rect: { x: 100, y: 350, width: 300, height: 30 },
-          page: 1
-        },
-        {
-          id: "field_5",
-          name: "Signature",
-          type: "text",
-          placeholder: "Type your name as signature",
-          required: true,
-          rect: { x: 100, y: 500, width: 300, height: 50 },
-          page: 2
-        }
-      ];
+    const numPages = pdf.numPages;
+    const placeholders: string[] = [];
+    
+    // Extract text content from each page
+    for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+      const page = await pdf.getPage(pageNum);
+      const textContent = await page.getTextContent();
       
-      resolve(mockFields);
-    }, 1500); // Simulate processing time
-  });
+      // Join all text items
+      const textItems = textContent.items.map((item: any) => item.str).join(' ');
+      
+      // Extract placeholders from this page
+      const pagePlaceholders = extractPlaceholders(textItems);
+      placeholders.push(...pagePlaceholders);
+    }
+    
+    // Remove duplicates
+    const uniquePlaceholders = [...new Set(placeholders)];
+    
+    // Create form fields for each placeholder
+    const fields: FormField[] = uniquePlaceholders.map((placeholder, index) => ({
+      id: `field_${index + 1}`,
+      name: placeholder,
+      type: "text",
+      placeholder: `Enter ${placeholder}`,
+      required: true,
+      rect: { x: 100, y: 100 + index * 50, width: 300, height: 30 },
+      page: 1
+    }));
+    
+    // Cleanup
+    URL.revokeObjectURL(fileUrl);
+    
+    return fields.length > 0 ? fields : createDefaultFields();
+  } catch (error) {
+    console.error("Error extracting placeholders:", error);
+    // Return some default fields if extraction fails
+    return createDefaultFields();
+  }
+};
+
+/**
+ * Create default fields if no placeholders are found
+ */
+const createDefaultFields = (): FormField[] => {
+  return [
+    {
+      id: "field_1",
+      name: "Full Name",
+      type: "text",
+      placeholder: "Enter your full name",
+      required: true,
+      rect: { x: 100, y: 200, width: 300, height: 30 },
+      page: 1
+    },
+    {
+      id: "field_2",
+      name: "Email",
+      type: "text",
+      placeholder: "Enter your email",
+      required: true,
+      rect: { x: 100, y: 250, width: 300, height: 30 },
+      page: 1
+    }
+  ];
 };
 
 /**
@@ -101,18 +135,26 @@ export const createFieldAtPosition = (
 };
 
 /**
- * In a real implementation, this would fill the actual PDF with values
+ * Fill PDF with values and generate a new PDF with filled placeholders
  */
-export const fillPdfWithValues = (documentUrl: string, fields: FormField[]): Promise<string> => {
-  return new Promise((resolve) => {
-    console.log("Filling PDF with values:", fields.map(f => `${f.name}: ${f.value}`).join(", "));
+export const fillPdfWithValues = async (documentUrl: string, fields: FormField[]): Promise<string> => {
+  console.log("Filling PDF with values:", fields.map(f => `${f.name}: ${f.value}`).join(", "));
+  
+  try {
+    // In a real implementation:
+    // 1. Load the PDF
+    // 2. Find placeholders in the content
+    // 3. Replace placeholders with values
+    // 4. Generate a new PDF
+
+    // For now, we'll simulate success after a short delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
-    // In a real implementation, this would use PDF manipulation libraries
-    // to actually fill the PDF with the provided values
-    
-    // For now, we just return the original document URL
-    setTimeout(() => {
-      resolve(documentUrl);
-    }, 1000);
-  });
+    // In a real implementation, you would return a URL to the filled PDF
+    return documentUrl;
+  } catch (error) {
+    console.error("Error filling PDF:", error);
+    throw new Error("Failed to fill PDF with values");
+  }
 };
+

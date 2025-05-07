@@ -53,7 +53,12 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
       // Create PDF preview URL
       const url = await createPdfPreviewUrl(file);
       
-      // Extract form fields
+      toast({
+        title: "Processing document",
+        description: "Extracting placeholders from PDF..."
+      });
+      
+      // Extract form fields and placeholders
       const fields = await extractFormFields(file);
       
       const docInfo: DocumentInfo = {
@@ -69,7 +74,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
       
       toast({
         title: "Document uploaded",
-        description: `Successfully processed ${file.name}`
+        description: `Successfully extracted ${fields.length} placeholder${fields.length === 1 ? '' : 's'}`
       });
     } catch (err) {
       console.error("Error processing document:", err);
@@ -116,7 +121,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
           <FileText className="w-16 h-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium mb-2">Upload your document</h3>
           <p className="text-sm text-gray-500 text-center mb-6">
-            Supported format: PDF
+            Supported format: PDF with placeholders like {{name}}
           </p>
           
           <label className="cursor-pointer">

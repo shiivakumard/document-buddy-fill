@@ -68,9 +68,9 @@ const FormFieldsSidebar: React.FC<FormFieldsSidebarProps> = ({
     return (
       <div className="p-4 text-center">
         <AlertCircle className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-        <h3 className="font-medium">No form fields detected</h3>
+        <h3 className="font-medium">No placeholders detected</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload a document with form fields to get started
+          Upload a document with placeholders like {{name}} to get started
         </p>
       </div>
     );
@@ -111,6 +111,10 @@ const FormFieldsSidebar: React.FC<FormFieldsSidebarProps> = ({
         {fields.map((field) => {
           const isSelected = selectedFieldId === field.id;
           const isFilled = !!field.value;
+          const isPlaceholder = field.name.includes("{{") || field.name.includes("}}");
+          
+          // Clean up placeholder name for display
+          const displayName = field.name.replace(/[{}]/g, '').trim();
           
           return (
             <div 
@@ -125,7 +129,7 @@ const FormFieldsSidebar: React.FC<FormFieldsSidebarProps> = ({
                 <div className="flex items-center">
                   <Bookmark className={`h-4 w-4 mr-2 ${isFilled ? 'text-green-500' : 'text-gray-400'}`} />
                   <Label htmlFor={field.id} className="font-medium cursor-pointer">
-                    {field.name} {field.required && <span className="text-red-500">*</span>}
+                    {displayName} {field.required && <span className="text-red-500">*</span>}
                   </Label>
                 </div>
                 
@@ -167,7 +171,7 @@ const FormFieldsSidebar: React.FC<FormFieldsSidebarProps> = ({
                   type={field.type === 'number' ? 'number' : 'text'}
                   value={field.value || ''}
                   onChange={(e) => onUpdateFieldValue(field.id, e.target.value)}
-                  placeholder={field.placeholder}
+                  placeholder={field.placeholder || `Enter ${displayName.toLowerCase()}`}
                   className="w-full"
                 />
               )}
@@ -190,7 +194,7 @@ const FormFieldsSidebar: React.FC<FormFieldsSidebarProps> = ({
           onClick={handleSaveDocument}
         >
           <Save className="mr-2 h-4 w-4" />
-          Save Document
+          Fill Document
         </Button>
       </div>
     </div>
