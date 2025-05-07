@@ -121,7 +121,7 @@ const DocumentViewer: React.FC<DocumentViewerProps> = ({
           <FileText className="w-16 h-16 text-gray-400 mb-4" />
           <h3 className="text-lg font-medium mb-2">Upload your document</h3>
           <p className="text-sm text-gray-500 text-center mb-6">
-            Supported format: PDF with placeholders like {{name}}
+            Supported format: PDF with placeholders like {"{{"}<span>name</span>{"}}"} 
           </p>
           
           <label className="cursor-pointer">

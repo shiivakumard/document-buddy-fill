@@ -70,7 +70,7 @@ const FormFieldsSidebar: React.FC<FormFieldsSidebarProps> = ({
         <AlertCircle className="w-8 h-8 text-orange-500 mx-auto mb-2" />
         <h3 className="font-medium">No placeholders detected</h3>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload a document with placeholders like {{name}} to get started
+          Upload a document with placeholders like {"{{"}<span>name</span>{"}}"}  to get started
         </p>
       </div>
     );
